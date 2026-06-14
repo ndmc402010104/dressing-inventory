@@ -1,0 +1,63 @@
+{
+  "appId": "dressing-inventory",
+  "title": "敷料庫存盤點領用系統",
+  "name": "敷料庫存盤點領用系統",
+  "shortName": "敷料庫存",
+  "description": "敷料庫存、入庫、盤點與領用的外部小專案。此版為 AJAX mock shell，尚未連接資料庫。",
+  "version": "0.1.0",
+  "status": "mock",
+  "group": "臨床作業",
+  "category": "clinical-operations",
+  "icon": "inventory",
+  "registerExternalApp": true,
+  "versionUrl": "",
+  "afterScripts": [
+    "assets/js/config.js",
+    "assets/js/app.js"
+  ],
+  "href": {
+    "local-dev": "http://127.0.0.1:5500/dressing-inventory/",
+    "dev": "https://dressing-inventory.skhps.jonaminz.com/",
+    "prod": "https://dressing-inventory.skhps.jonaminz.com/"
+  },
+  "entry": {
+    "type": "html",
+    "path": "index.html"
+  },
+  "features": [
+    "inventory",
+    "inbound",
+    "stocktake",
+    "issue",
+    "mock-data",
+    "action-log"
+  ],
+  "dataSource": {
+    "type": "mock",
+    "connected": false,
+    "note": "目前不連接 Apps Script、Sheet 或 API。"
+  },
+  "inventoryRules": {
+    "lowStockQuantityLessThanOrEqual": 10,
+    "expiringWithinDays": 90
+  },
+  "capabilities": {
+    "readInventory": false,
+    "writeInventory": false,
+    "submitInbound": false,
+    "submitStocktake": false,
+    "submitIssue": false,
+    "offlineMock": true
+  },
+  "ui": {
+    "cardTitle": "敷料庫存",
+    "cardSubtitle": "庫存 / 入庫 / 盤點 / 領用",
+    "cardDescription": "敷料庫存盤點領用系統，目前為 mock AJAX shell。",
+    "accent": "teal"
+  },
+  "integration": {
+    "registryMode": "app-entry-card",
+    "activationRequired": true,
+    "note": "正式啟用與顯示位置由 skhpsv2 後台 / 外部專案 Sheet 決定，本專案不自行決定。"
+  }
+}

@@ -8,12 +8,16 @@
 - 本頁是外部 App，不是 skhpsv2 主體。
 - 本頁只宣告 App 身分、必要容器、loading tasks。
 - 本頁業務邏輯放在 assets/js/app.js。
-- 共通 runtime / config / backend-client / loading gate / CSS Sheet runtime / header / footer / diagnostics 未來由 skhpsv2 水庫載入。
+- 外部專案 card 由 config.json 管理，前端 JS 設定由 assets/js/config.js 管理。
+- 本頁只直接載入 skhpsv2 app-entry.js；水庫載入共通 runtime 後，再依 config.json afterScripts 載入本專案 JS。
 - 本版先不接資料庫，所有資料使用 mock data。
 -->
 <html
   lang="zh-Hant"
   class="skhps-css-loading"
+  data-loading-title="敷料庫存盤點領用系統"
+  data-skhps-page-id="dressing-inventory"
+  data-skhps-page-map-current="敷料庫存"
   data-skhps-app-id="dressing-inventory"
   data-skhps-app-name="敷料庫存盤點領用系統"
   data-skhps-loading-tasks="css-runtime,dressing-inventory"
@@ -22,7 +26,45 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>敷料庫存盤點領用系統</title>
-  <!-- Future migration point: skhpsv2 app-entry.js / CSS Sheet runtime injection. -->
+  <script>
+    (function () {
+      "use strict";
+
+      var host = String(location.hostname || "").toLowerCase();
+      var params = new URLSearchParams(location.search || "");
+      var runtime = String(params.get("skhpsRuntime") || "").trim();
+      var isLocal = host === "127.0.0.1" || host === "localhost" || host === "";
+      var allowedRuntime = { "local-dev": true, dev: true, prod: true };
+
+      function runtimeBaseUrl(value) {
+        if (value === "local-dev") return "http://127.0.0.1:5500/skhpsv2/";
+        if (value === "dev") return "https://dev-skhps.jonaminz.com/";
+        return "https://skhps.jonaminz.com/";
+      }
+
+      function currentRuntime() {
+        if (isLocal) return "local-dev";
+        if (allowedRuntime[runtime]) return runtime;
+        return "prod";
+      }
+
+      var resolvedRuntime = currentRuntime();
+
+      window.SKHPS_ENTRY_VERSION = "20260614";
+      window.SKHPS_ENTRY_BASE_URL = runtimeBaseUrl(resolvedRuntime);
+      window.SKHPS_APP_CARD_URL = "config.json";
+
+      document.documentElement.setAttribute("data-skhps-runtime", resolvedRuntime);
+
+      document.write(
+        '<link rel="stylesheet" href="' +
+        window.SKHPS_ENTRY_BASE_URL +
+        'assets/css/skhps-loading.css?v=' +
+        encodeURIComponent(window.SKHPS_ENTRY_VERSION) +
+        '">'
+      );
+    })();
+  </script>
   <!-- TEMP INLINE CSS START: dressing-inventory page only.
        Future migration target: CSS Sheet / assets/css/page.css -->
   <style>
@@ -151,15 +193,24 @@
       color: #fff;
     }
 
+    .sort-button {
+      min-height: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      text-align: left;
+    }
+
     .secondary { background: var(--panel-soft); }
     .danger-button { color: var(--danger); }
     button:hover { filter: brightness(0.98); }
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 360px;
       gap: 16px;
-      align-items: start;
     }
 
     .panel,
@@ -167,6 +218,10 @@
     .detail-panel,
     .log-panel {
       padding: 18px;
+    }
+
+    #summaryArea {
+      padding: 12px;
     }
 
     .panel + .panel,
@@ -232,18 +287,18 @@
 
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .metric {
-      min-height: 82px;
-      padding: 12px;
+      min-height: 54px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel-soft);
     }
 
-    .metric strong { display: block; font-size: 1.55rem; }
+    .metric strong { display: block; font-size: 1.25rem; }
     .metric span { color: var(--muted); font-size: 0.84rem; font-weight: 700; }
 
     .detail-list {
@@ -261,6 +316,88 @@
     }
 
     .detail-line span:first-child { color: var(--muted); }
+
+    .batch-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .batch-row {
+      display: grid;
+      grid-template-columns: minmax(52px, 0.8fr) minmax(82px, 1.2fr) minmax(86px, 1fr);
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      min-width: 0;
+    }
+
+    .batch-main,
+    .batch-sub {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .batch-main {
+      font-weight: 800;
+    }
+
+    .batch-sub {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .batch-meta {
+      display: grid;
+      justify-items: end;
+      gap: 4px;
+      min-width: 0;
+      text-align: right;
+    }
+
+    .inventory-detail-row td {
+      padding: 0;
+      background: #f8fbff;
+    }
+
+    .inventory-detail-panel {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border-left: 4px solid var(--primary);
+      animation: inventorySlideDown 150ms ease-out;
+    }
+
+    .inventory-detail-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .inline-log-toggle {
+      justify-self: start;
+      min-height: 36px;
+      padding: 6px 10px;
+      background: var(--panel);
+    }
+
+    .inline-log-panel {
+      display: grid;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    @keyframes inventorySlideDown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .empty, .success, .error {
       padding: 14px;
       border-radius: 8px;
@@ -306,6 +443,9 @@
       .app-shell { padding: 16px 12px 96px; }
       .hero, .panel, .status-panel, .detail-panel, .log-panel { padding: 14px; }
       .toolbar, .field-grid, .summary-grid { grid-template-columns: 1fr; }
+      .batch-row { grid-template-columns: 1fr; justify-items: stretch; }
+      .batch-meta { justify-items: start; text-align: left; }
+      .inventory-detail-panel { padding: 12px; }
       .tab-row { display: grid; grid-template-columns: 1fr 1fr; }
       .tab-button { padding-inline: 8px; }
       .desktop-table { display: none; }
@@ -325,18 +465,14 @@
   </style>
   <!-- TEMP INLINE CSS END -->
 </head>
-<body>
+<body class="skhps-body">
+  <header id="header" class="skhps-header" data-skhps-header></header>
+
   <main id="dressingInventoryApp" class="app-shell" aria-live="polite">
     <section class="hero">
       <div>
         <h1>敷料庫存盤點領用系統</h1>
         <p>先建立庫存、盤點、入庫、領用流程骨架，資料庫串接後補。</p>
-      </div>
-      <div class="badge-row" aria-label="系統狀態">
-        <span class="badge warn">MOCK DATA</span>
-        <span class="badge danger">未連線資料庫</span>
-        <span class="badge neutral">AJAX shell</span>
-        <span class="badge">DEV/LOCAL/PROD placeholder</span>
       </div>
     </section>
 
@@ -346,18 +482,48 @@
 
     <section class="layout">
       <div>
-        <section id="statusArea" class="panel"></section>
-        <section id="workspaceArea" class="panel"></section>
-        <section id="placeholderArea" class="panel"></section>
-      </div>
-      <aside>
         <section id="summaryArea" class="status-panel"></section>
-        <section id="detailArea" class="detail-panel"></section>
-        <section id="logArea" class="log-panel"></section>
-      </aside>
+        <section id="workspaceArea" class="panel"></section>
+      </div>
     </section>
   </main>
 
-  <script src="assets/js/app.js"></script>
+  <footer data-skhps-footer class="skhps-footer">Footer 載入中...</footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      function loadLocalScript(src) {
+        var script = document.createElement("script");
+        script.src = src;
+        script.async = false;
+        document.head.appendChild(script);
+      }
+
+      function loadStandaloneFallback() {
+        if (window.DRESSING_INVENTORY_STANDALONE_FALLBACK_LOADED) return;
+        if (window.DRESSING_INVENTORY_APP_SCRIPT_LOADED) return;
+        window.DRESSING_INVENTORY_STANDALONE_FALLBACK_LOADED = true;
+        loadLocalScript("assets/js/config.js");
+        loadLocalScript("assets/js/app.js");
+      }
+
+      var script = document.createElement("script");
+      script.src =
+        window.SKHPS_ENTRY_BASE_URL +
+        "assets/js/app-entry.js?v=" +
+        encodeURIComponent(window.SKHPS_ENTRY_VERSION);
+      script.async = false;
+      script.onerror = loadStandaloneFallback;
+      document.head.appendChild(script);
+
+      window.setTimeout(function () {
+        if (!window.DressingInventory || !window.DressingInventory.state) {
+          loadStandaloneFallback();
+        }
+      }, 3500);
+    })();
+  </script>
 </body>
 </html>
