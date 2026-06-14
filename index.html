@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<!--
+檔案位置：dressing-inventory/index.html
+時間戳記：2026-06-14 10:23 UTC+8
+用途：敷料庫存盤點領用系統外部小專案入口。
+
+水庫法則：
+- 本頁是外部 App，不是 skhpsv2 主體。
+- 本頁只宣告 App 身分、必要容器、loading tasks。
+- 本頁業務邏輯放在 assets/js/app.js。
+- 共通 runtime / config / backend-client / loading gate / CSS Sheet runtime / header / footer / diagnostics 未來由 skhpsv2 水庫載入。
+- 本版先不接資料庫，所有資料使用 mock data。
+-->
+<html
+  lang="zh-Hant"
+  class="skhps-css-loading"
+  data-skhps-app-id="dressing-inventory"
+  data-skhps-app-name="敷料庫存盤點領用系統"
+  data-skhps-loading-tasks="css-runtime,dressing-inventory"
+>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>敷料庫存盤點領用系統</title>
+  <!-- Future migration point: skhpsv2 app-entry.js / CSS Sheet runtime injection. -->
+  <!-- TEMP INLINE CSS START: dressing-inventory page only.
+       Future migration target: CSS Sheet / assets/css/page.css -->
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fbff;
+      --line: #dbe5ef;
+      --text: #162231;
+      --muted: #64748b;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --danger: #b42318;
+      --warn: #b7791f;
+      --ok: #15803d;
+      --info: #2563eb;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    .skhps-css-loading body::before {
+      content: "敷料庫存盤點領用系統載入中...";
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      background: rgba(244, 247, 251, 0.96);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .app-shell {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 24px 18px 88px;
+    }
+
+    .hero,
+    .panel,
+    .status-panel,
+    .detail-panel,
+    .log-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: start;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.2; }
+    h1 { font-size: clamp(1.65rem, 3vw, 2.4rem); }
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 1rem; }
+    p { margin: 8px 0 0; color: var(--muted); }
+
+    .badge-row, .tab-row, .action-row, .summary-grid, .field-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .badge.danger { background: #fee2e2; color: #991b1b; }
+    .badge.neutral { background: #eef2ff; color: #3730a3; }
+
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin-bottom: 16px;
+      padding: 10px;
+      background: rgba(244, 247, 251, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tab-button,
+    button {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-button[aria-selected="true"],
+    .primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .secondary { background: var(--panel-soft); }
+    .danger-button { color: var(--danger); }
+    button:hover { filter: brightness(0.98); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .status-panel,
+    .detail-panel,
+    .log-panel {
+      padding: 18px;
+    }
+
+    .panel + .panel,
+    .detail-panel + .log-panel {
+      margin-top: 16px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      padding: 8px 10px;
+      font: inherit;
+    }
+
+    textarea { min-height: 72px; resize: vertical; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 14px 0;
+    }
+
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: 1 / -1; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.93rem;
+    }
+
+    th { color: var(--muted); background: var(--panel-soft); font-size: 0.82rem; }
+    tr.is-selected { background: #ecfeff; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric {
+      min-height: 82px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .metric strong { display: block; font-size: 1.55rem; }
+    .metric span { color: var(--muted); font-size: 0.84rem; font-weight: 700; }
+
+    .detail-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .detail-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px dashed var(--line);
+      padding-bottom: 8px;
+    }
+
+    .detail-line span:first-child { color: var(--muted); }
+    .empty, .success, .error {
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px dashed var(--line);
+      background: var(--panel-soft);
+      color: var(--muted);
+    }
+
+    .success { border-color: #86efac; background: #f0fdf4; color: #166534; }
+    .error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+
+    .log-list {
+      display: grid;
+      gap: 8px;
+      max-height: 320px;
+      overflow: auto;
+      margin-top: 12px;
+      padding-right: 4px;
+    }
+
+    .log-item {
+      border-left: 4px solid var(--info);
+      background: var(--panel-soft);
+      padding: 9px 10px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .log-item.success { border-color: var(--ok); }
+    .log-item.warn { border-color: var(--warn); }
+    .log-item.error { border-color: var(--danger); }
+
+    .mobile-card-list { display: none; }
+
+    @media (max-width: 980px) {
+      .hero, .layout { grid-template-columns: 1fr; }
+      .toolbar, .field-grid { grid-template-columns: 1fr 1fr; }
+      .span-2, .span-3 { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell { padding: 16px 12px 96px; }
+      .hero, .panel, .status-panel, .detail-panel, .log-panel { padding: 14px; }
+      .toolbar, .field-grid, .summary-grid { grid-template-columns: 1fr; }
+      .tab-row { display: grid; grid-template-columns: 1fr 1fr; }
+      .tab-button { padding-inline: 8px; }
+      .desktop-table { display: none; }
+      .mobile-card-list { display: grid; gap: 10px; }
+      .item-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 12px;
+      }
+      .item-card + .item-card { margin-top: 0; }
+      .item-card dl { display: grid; gap: 6px; margin: 10px 0 0; }
+      .item-card div { display: flex; justify-content: space-between; gap: 10px; }
+      .item-card dt { color: var(--muted); font-weight: 700; }
+      .item-card dd { margin: 0; text-align: right; }
+    }
+  </style>
+  <!-- TEMP INLINE CSS END -->
+</head>
+<body>
+  <main id="dressingInventoryApp" class="app-shell" aria-live="polite">
+    <section class="hero">
+      <div>
+        <h1>敷料庫存盤點領用系統</h1>
+        <p>先建立庫存、盤點、入庫、領用流程骨架，資料庫串接後補。</p>
+      </div>
+      <div class="badge-row" aria-label="系統狀態">
+        <span class="badge warn">MOCK DATA</span>
+        <span class="badge danger">未連線資料庫</span>
+        <span class="badge neutral">AJAX shell</span>
+        <span class="badge">DEV/LOCAL/PROD placeholder</span>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="主要工作模式">
+      <div id="modeTabs" class="tab-row"></div>
+    </nav>
+
+    <section class="layout">
+      <div>
+        <section id="statusArea" class="panel"></section>
+        <section id="workspaceArea" class="panel"></section>
+        <section id="placeholderArea" class="panel"></section>
+      </div>
+      <aside>
+        <section id="summaryArea" class="status-panel"></section>
+        <section id="detailArea" class="detail-panel"></section>
+        <section id="logArea" class="log-panel"></section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
