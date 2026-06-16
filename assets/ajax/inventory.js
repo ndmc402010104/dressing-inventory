@@ -9,8 +9,12 @@
     return `<span class="badge ${className}">${escapeHtml(status)}</span>`;
   }
 
+  function appManifest() {
+    return window.SKHPS_APP_EFFECTIVE_MANIFEST || window.SKHPS_APP_MANIFEST || {};
+  }
+
   function inventoryRules() {
-    const rules = window.SKHPS_APP_CONFIG && window.SKHPS_APP_CONFIG.inventoryRules;
+    const rules = appManifest().inventoryRules;
     return Object.assign({
       lowStockQuantityLessThanOrEqual: 10,
       expiringWithinDays: 90

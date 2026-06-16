@@ -1,6 +1,6 @@
 /*
-檔案位置：dressing-inventory/assets/js/config.js
-時間戳記：2026-06-14 10:23 UTC+8
+檔案位置：dressing-inventory/config.js
+時間戳記：2026-06-16 19:40 UTC+8
 用途：敷料庫存盤點領用系統前端 JS 設定檔。
 說明：
 - 本檔只放本外部小專案的前端載入設定。
@@ -8,7 +8,8 @@
 - 不放資料庫 endpoint。
 - 不放 Apps Script URL。
 - 不放密鑰。
-- index.html 載入本檔後，由 assets/js/app.js 依 ajaxModules 載入 ajax/*.js。
+- 本檔由 app.json -> entry.afterScripts 載入。
+- assets/js/app.js 依 ajaxModules 載入 assets/ajax/*.js。
 */
 (function () {
   "use strict";
@@ -18,7 +19,7 @@
     appName: "敷料庫存盤點領用系統",
     mode: "mock",
     loadingTask: "dressing-inventory",
-    ajaxBasePath: "ajax/",
+    ajaxBasePath: "assets/ajax/",
     ajaxModules: [
       "mock-data.js",
       "log.js",

@@ -1,10 +1,20 @@
-window.SKHPS_VERSION = {
-  appId: "dressing-inventory",
-  version: "v0.0.3-202606141705",
-  major: 0,
-  minor: 0,
-  patch: 3,
-  buildTime: "202606141705",
-  updatedAt: "2026-06-14T17:05:00+08:00",
-  source: "version.js"
-};
+﻿/*
+檔案位置：dressing-inventory/version.js
+時間戳記：2026-06-16 19:40 UTC+8
+用途：敷料庫存盤點領用系統外部 App 業務版本宣告。這不是 SKHPS_ENTRY_VERSION。
+*/
+(function () {
+  "use strict";
+
+  window.SKHPS_APP_VERSION = {
+    appId: "dressing-inventory",
+    version: "v0.1.1-202606161941",
+    major: 0,
+    minor: 1,
+    patch: 1,
+    buildTime: "202606161941",
+    updatedAt: "2026-06-16T19:41:27+08:00",
+    source: "version.js"
+  };
+})();
+

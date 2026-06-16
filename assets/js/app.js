@@ -4,7 +4,22 @@
   if (window.DRESSING_INVENTORY_APP_SCRIPT_LOADED) return;
   window.DRESSING_INVENTORY_APP_SCRIPT_LOADED = true;
 
-  const config = window.DressingInventoryConfig;
+  const config = window.DressingInventoryConfig || {
+    appId: "dressing-inventory",
+    appName: "敷料庫存盤點領用系統",
+    mode: "mock",
+    loadingTask: "dressing-inventory",
+    ajaxBasePath: "assets/ajax/",
+    ajaxModules: [
+      "mock-data.js",
+      "log.js",
+      "summary.js",
+      "inventory.js",
+      "inbound.js",
+      "stocktake.js",
+      "issue.js"
+    ]
+  };
 
   const DI = window.DressingInventory = window.DressingInventory || {
     config,
@@ -286,17 +301,41 @@
     });
   }
 
+  function markLoadingTaskReady(task) {
+    document.documentElement.setAttribute("data-skhps-" + task + "-ready", "true");
+    document.documentElement.setAttribute("data-skhps-page-ready", "true");
+  }
+
+  function markLoadingTaskFailed(task) {
+    document.documentElement.setAttribute("data-skhps-" + task + "-ready", "false");
+    document.documentElement.setAttribute("data-skhps-page-ready", "true");
+  }
+
   function readyLoadingGate() {
+    markLoadingTaskReady(config.loadingTask);
+
     if (window.SKHPSLoading && typeof window.SKHPSLoading.done === "function") {
       window.SKHPSLoading.done(config.loadingTask);
       return;
     }
+
+    fallbackLoadingRelease();
+  }
+
+  function failLoadingGate(error) {
+    markLoadingTaskFailed(config.loadingTask);
+
+    if (window.SKHPSLoading && typeof window.SKHPSLoading.fail === "function") {
+      window.SKHPSLoading.fail(config.loadingTask, error);
+      return;
+    }
+
     fallbackLoadingRelease();
   }
 
   function fallbackLoadingRelease() {
-    document.documentElement.classList.remove("skhps-css-loading");
     document.documentElement.classList.remove("skhps-loading");
+    document.documentElement.classList.remove("skhps-main-loading");
   }
 
   function showBootstrapError(error) {
@@ -309,7 +348,7 @@
         </section>
       `;
     }
-    fallbackLoadingRelease();
+    failLoadingGate(error);
   }
 
   function initApp() {
@@ -339,6 +378,7 @@
     initApp,
     bindEvents,
     readyLoadingGate,
+    failLoadingGate,
     renderApp,
     switchMode
   });

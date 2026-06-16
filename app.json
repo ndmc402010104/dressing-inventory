@@ -1,37 +1,38 @@
-﻿{
+{
+  "schemaVersion": 1,
   "appId": "dressing-inventory",
   "title": "敷料庫存盤點領用系統",
-  "name": "敷料庫存盤點領用系統",
-  "shortName": "敷料庫存",
   "description": "敷料庫存、入庫、盤點與領用的外部小專案。此版為 AJAX mock shell，尚未連接資料庫。",
-  "version": "0.1.0",
-  "status": "mock",
   "group": "臨床作業",
-  "category": "clinical-operations",
-  "icon": "inventory",
-  "registerExternalApp": true,
-  "versionUrl": "",
-  "afterScripts": [
-    "assets/js/config.js",
-    "assets/js/app.js"
-  ],
   "href": {
-    "local-dev": "http://127.0.0.1:5500/dressing-inventory/",
-    "dev": "https://dressing-inventory.skhps.jonaminz.com/",
-    "prod": "https://dressing-inventory.skhps.jonaminz.com/"
+    "local-dev": "http://127.0.0.1:5500/dressing-inventory/?skhpsRuntime=local-dev",
+    "dev": "https://dressing-inventory.skhps.jonaminz.com/?skhpsRuntime=dev",
+    "prod": "https://dressing-inventory.skhps.jonaminz.com/?skhpsRuntime=prod"
+  },
+  "registerExternalApp": true,
+  "version": {
+    "source": "version.js",
+    "globalName": "SKHPS_APP_VERSION"
   },
   "entry": {
-    "type": "html",
-    "path": "index.html"
+    "afterScripts": [
+      "config.js",
+      "assets/js/app.js"
+    ],
+    "loadingTasks": [
+      "dressing-inventory"
+    ]
   },
-  "features": [
-    "inventory",
-    "inbound",
-    "stocktake",
-    "issue",
-    "mock-data",
-    "action-log"
-  ],
+  "features": {
+    "cssRuntime": true,
+    "header": true,
+    "footer": true,
+    "runtimePanel": true,
+    "backendClient": false
+  },
+  "backend": {
+    "required": false
+  },
   "dataSource": {
     "type": "mock",
     "connected": false,
@@ -56,7 +57,7 @@
     "accent": "teal"
   },
   "integration": {
-    "registryMode": "app-entry-card",
+    "registryMode": "app-json",
     "activationRequired": true,
     "note": "正式啟用與顯示位置由 skhpsv2 後台 / 外部專案 Sheet 決定，本專案不自行決定。"
   },

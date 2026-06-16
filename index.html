@@ -1,39 +1,50 @@
 <!DOCTYPE html>
 <!--
 檔案位置：dressing-inventory/index.html
-時間戳記：2026-06-14 10:23 UTC+8
-用途：敷料庫存盤點領用系統外部小專案入口。
+時間戳記：2026-06-16 19:40 UTC+8
+用途：敷料庫存盤點領用系統外部 App 入口。
 
 水庫法則：
-- 本頁是外部 App，不是 skhpsv2 主體。
-- 本頁只宣告 App 身分、必要容器、loading tasks。
-- 本頁業務邏輯放在 assets/js/app.js。
-- 外部專案 card 由 config.json 管理，前端 JS 設定由 assets/js/config.js 管理。
-- 本頁只直接載入 skhpsv2 app-entry.js；水庫載入共通 runtime 後，再依 config.json afterScripts 載入本專案 JS。
-- 本版先不接資料庫，所有資料使用 mock data。
+- 本頁是外部 App，不是 skhpsv2 主體頁。
+- 本頁只直接載入：
+  1. skhpsv2/assets/css/skhps-loading.css
+  2. skhpsv2/assets/js/app-entry.js
+- 本頁不直接載入 runtime/config/backend/css/header/footer/entry-core。
+- 本頁不直接載入 assets/js/app.js 或 assets/ajax/*.js。
+- app.js 與 config.js 由 app.json -> entry.afterScripts 交給水庫載入。
+- 正式 CSS 由 CSS Sheet runtime / cache / fallback 負責。
+- loading 階段由唯一 skhps-loading.css 負責。
+- SKHPS_ENTRY_VERSION 只是水庫前端資源 cache buster，不是業務版本。
+
+注意：
+- 本頁仍保留 dressing-inventory 業務畫面暫時樣式，後續應沉澱到 CSS Sheet。
 -->
 <html
   lang="zh-Hant"
-  class="skhps-css-loading"
+  class="skhps-loading skhps-css-loading skhps-shell-loading skhps-main-loading"
   data-loading-title="敷料庫存盤點領用系統"
-  data-skhps-page-id="dressing-inventory"
-  data-skhps-page-map-current="敷料庫存"
+  data-skhps-entry-scope="external-app"
   data-skhps-app-id="dressing-inventory"
   data-skhps-app-name="敷料庫存盤點領用系統"
+  data-skhps-page-id="dressing-inventory"
+  data-skhps-page-map-current="敷料庫存"
   data-skhps-loading-tasks="css-runtime,dressing-inventory"
+  data-skhps-shell-ready="false"
+  data-skhps-page-ready="false"
 >
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>敷料庫存盤點領用系統</title>
+
   <script>
     (function () {
       "use strict";
 
+      var APP_MANIFEST_URL = "app.json";
       var host = String(location.hostname || "").toLowerCase();
       var params = new URLSearchParams(location.search || "");
-      var runtime = String(params.get("skhpsRuntime") || "").trim();
-      var isLocal = host === "127.0.0.1" || host === "localhost" || host === "";
+      var runtime = String(params.get("skhpsRuntime") || params.get("runtime") || "").trim();
       var allowedRuntime = { "local-dev": true, dev: true, prod: true };
 
       function runtimeBaseUrl(value) {
@@ -43,29 +54,44 @@
       }
 
       function currentRuntime() {
-        if (isLocal) return "local-dev";
         if (allowedRuntime[runtime]) return runtime;
+        if (host === "127.0.0.1" || host === "localhost" || host === "") return "local-dev";
+        if (host.indexOf("dev-") === 0 || host.indexOf("dev.") === 0 || host.indexOf("dev-skhps") >= 0) return "dev";
         return "prod";
+      }
+
+      function assetVersion(value) {
+        if (value === "local-dev" || value === "dev") return String(Date.now());
+        return window.SKHPS_ASSET_VERSION || "prod";
       }
 
       var resolvedRuntime = currentRuntime();
 
-      window.SKHPS_ENTRY_VERSION = "202606141725";
+      window.SKHPS_ENTRY_VERSION = assetVersion(resolvedRuntime);
       window.SKHPS_ENTRY_BASE_URL = runtimeBaseUrl(resolvedRuntime);
-      window.SKHPS_APP_CARD_URL = "config.json";
+      window.SKHPS_APP_MANIFEST_URL = APP_MANIFEST_URL;
 
       document.documentElement.setAttribute("data-skhps-runtime", resolvedRuntime);
+      document.documentElement.setAttribute("data-skhps-entry-scope", "external-app");
 
       document.write(
         '<link rel="stylesheet" href="' +
         window.SKHPS_ENTRY_BASE_URL +
-        'uni-CSS.CSS?v=' +
+        'assets/css/skhps-loading.css?v=' +
         encodeURIComponent(window.SKHPS_ENTRY_VERSION) +
         '">'
       );
+
+      document.write(
+        '<script src="' +
+        window.SKHPS_ENTRY_BASE_URL +
+        'assets/js/app-entry.js?v=' +
+        encodeURIComponent(window.SKHPS_ENTRY_VERSION) +
+        '"><\/script>'
+      );
     })();
   </script>
-  <!-- TEMP INLINE CSS START: dressing-inventory page only.
+<!-- TEMP INLINE CSS START: dressing-inventory page only.
        Future migration target: CSS Sheet / assets/css/page.css -->
   <style>
     :root {
@@ -93,18 +119,6 @@
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.5;
-    }
-
-    .skhps-css-loading body::before {
-      content: "敷料庫存盤點領用系統載入中...";
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      display: grid;
-      place-items: center;
-      background: rgba(244, 247, 251, 0.96);
-      color: var(--muted);
-      font-weight: 700;
     }
 
     .app-shell {
@@ -468,7 +482,7 @@
 <body class="skhps-body">
   <header id="header" class="skhps-header" data-skhps-header></header>
 
-  <main id="dressingInventoryApp" class="app-shell" aria-live="polite">
+  <main id="dressingInventoryApp" class="app-shell" data-skhps-main aria-live="polite">
     <section class="hero">
       <div>
         <h1>敷料庫存盤點領用系統</h1>
@@ -488,42 +502,6 @@
     </section>
   </main>
 
-  <footer data-skhps-footer class="skhps-footer">Footer 載入中...</footer>
-
-  <script>
-    (function () {
-      "use strict";
-
-      function loadLocalScript(src) {
-        var script = document.createElement("script");
-        script.src = src;
-        script.async = false;
-        document.head.appendChild(script);
-      }
-
-      function loadStandaloneFallback() {
-        if (window.DRESSING_INVENTORY_STANDALONE_FALLBACK_LOADED) return;
-        if (window.DRESSING_INVENTORY_APP_SCRIPT_LOADED) return;
-        window.DRESSING_INVENTORY_STANDALONE_FALLBACK_LOADED = true;
-        loadLocalScript("assets/js/config.js");
-        loadLocalScript("assets/js/app.js");
-      }
-
-      var script = document.createElement("script");
-      script.src =
-        window.SKHPS_ENTRY_BASE_URL +
-        "assets/js/app-entry.js?v=" +
-        encodeURIComponent(window.SKHPS_ENTRY_VERSION);
-      script.async = false;
-      script.onerror = loadStandaloneFallback;
-      document.head.appendChild(script);
-
-      window.setTimeout(function () {
-        if (!window.DressingInventory || !window.DressingInventory.state) {
-          loadStandaloneFallback();
-        }
-      }, 3500);
-    })();
-  </script>
+  <footer id="footer" data-skhps-footer class="skhps-footer">Footer 載入中...</footer>
 </body>
 </html>
