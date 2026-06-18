@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 檔案位置：dressing-inventory/index.html
-時間戳記：2026-06-16 19:40 UTC+8
+時間戳記：2026-06-17 22:40 UTC+8
 用途：敷料庫存盤點領用系統外部 App 入口。
 
 水庫法則：
@@ -18,6 +18,7 @@
 
 注意：
 - 本頁仍保留 dressing-inventory 業務畫面暫時樣式，後續應沉澱到 CSS Sheet。
+- 本版只補 loading 階段 layout isolation，避免 app-shell / tabs 先佔位把水庫 loading 畫面往下推。
 -->
 <html
   lang="zh-Hant"
@@ -91,7 +92,8 @@
       );
     })();
   </script>
-<!-- TEMP INLINE CSS START: dressing-inventory page only.
+
+  <!-- TEMP INLINE CSS START: dressing-inventory page only.
        Future migration target: CSS Sheet / assets/css/page.css -->
   <style>
     :root {
@@ -476,9 +478,37 @@
       .item-card dt { color: var(--muted); font-weight: 700; }
       .item-card dd { margin: 0; text-align: right; }
     }
+
+    /*
+      Loading layout isolation fix.
+      目的：
+      loading 階段讓外部頁面的 header / main / footer 完全不參與排版，
+      避免 app-shell / tabs 留下空白高度，把水庫 loading 畫面往下推。
+
+      注意：
+      不要 display:none body / html，否則會連 skhps-loading.css 的 loading 畫面一起影響。
+    */
+    html.skhps-loading,
+    html.skhps-loading body {
+      min-height: 100vh !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+    }
+
+    html.skhps-loading [data-skhps-header],
+    html.skhps-loading [data-skhps-main],
+    html.skhps-loading [data-skhps-footer] {
+      display: none !important;
+    }
+
+    html.skhps-loading .app-shell,
+    html.skhps-loading .tabs {
+      display: none !important;
+    }
   </style>
   <!-- TEMP INLINE CSS END -->
 </head>
+
 <body class="skhps-body">
   <header id="header" class="skhps-header" data-skhps-header></header>
 
