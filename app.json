@@ -61,5 +61,10 @@
     "activationRequired": true,
     "note": "正式啟用與顯示位置由 skhpsv2 後台 / 外部專案 Sheet 決定，本專案不自行決定。"
   },
-  "env": "prod"
+  "env": "prod",
+  "registry": {
+    "showInLauncher": true,
+    "defaultPosition": "front",
+    "role": "entry"
+  }
 }

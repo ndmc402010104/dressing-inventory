@@ -8,15 +8,16 @@
 
   window.SKHPS_APP_VERSION = {
     appId: "dressing-inventory",
-    version: "v0.1.2-202606181838",
+    version: "v0.1.3-202606191538",
     major: 0,
     minor: 1,
-    patch: 2,
-    buildTime: "202606181838",
-    updatedAt: "2026-06-18T18:38:29+08:00",
+    patch: 3,
+    buildTime: "202606191538",
+    updatedAt: "2026-06-19T15:38:20+08:00",
     source: "version.js"
   };
 })();
+
 
 
 
