@@ -5,7 +5,7 @@
   "description": "敷料庫存、入庫、盤點與領用的外部小專案。此版為 AJAX mock shell，尚未連接資料庫。",
   "group": "臨床作業",
   "href": {
-    "local-dev": "http://127.0.0.1:5500/dressing-inventory/?skhpsRuntime=local-dev",
+    "local-dev": "/dressing-inventory/",
     "dev": "https://dressing-inventory.skhps.jonaminz.com/?skhpsRuntime=dev",
     "prod": "https://dressing-inventory.skhps.jonaminz.com/?skhpsRuntime=prod"
   },

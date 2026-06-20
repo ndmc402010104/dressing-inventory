@@ -49,14 +49,14 @@
       var allowedRuntime = { "local-dev": true, dev: true, prod: true };
 
       function runtimeBaseUrl(value) {
-        if (value === "local-dev") return "http://127.0.0.1:5500/skhpsv2/";
+        if (value === "local-dev") return window.location.origin + "/skhpsv2/";
         if (value === "dev") return "https://dev-skhps.jonaminz.com/";
         return "https://skhps.jonaminz.com/";
       }
 
       function currentRuntime() {
         if (allowedRuntime[runtime]) return runtime;
-        if (host === "127.0.0.1" || host === "localhost" || host === "") return "local-dev";
+        if (host === "127.0.0.1" || host === "localhost" || host === "" || /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) return "local-dev";
         if (host.indexOf("dev-") === 0 || host.indexOf("dev.") === 0 || host.indexOf("dev-skhps") >= 0) return "dev";
         return "prod";
       }
@@ -535,3 +535,4 @@
   <footer id="footer" data-skhps-footer class="skhps-footer">Footer 載入中...</footer>
 </body>
 </html>
+
